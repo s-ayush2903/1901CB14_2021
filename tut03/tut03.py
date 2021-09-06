@@ -2,11 +2,11 @@ import os
 import shutil
 
 # capture the path of the file to be parsed
-file_to_be_parsed = "tut03/regtable_old.csv"
+file_to_be_parsed = os.path.join(os.getcwd() + "/regtable_old.csv")
 header_row = "rollno,register_sem,sub_no,sub_type\n"
 
 def output_by_subject():
-	root_dir = "tut03/output_by_subject"
+	root_dir = os.path.join(os.getcwd(), "/output_by_subject")
 	file = open(file_to_be_parsed)
 
 	# ALWAYS create a new directory, if it already exists, DELETE it
@@ -37,7 +37,7 @@ def output_by_subject():
 
 def output_individual_roll():
 	file = open(file_to_be_parsed)
-	root_dir = "tut03/output_individual_roll"
+	root_dir = os.path.join(os.getcwd() + "/output_individual_roll")
 
 	# ALWAYS create a new directory, if it already exists, DELETE it
 	if(os.path.exists(root_dir)):
