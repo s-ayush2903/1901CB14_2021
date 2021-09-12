@@ -4,6 +4,5 @@
 .vscode/
 *.txt
 *.aux
-*.tex
 *.synctex.gz
 *.out
