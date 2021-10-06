@@ -36,11 +36,11 @@ def prepOverallResult(rollNum: str):
 	for ind, line in enumerate(masterList):
 		if line[0] == rollNum:
 			maxSem = max(maxSem, int(line[1]))
-	
+	maxSem += 1 # As range iterates till maxValue - 1
+
 	semwiseCreds = ["Semester wise Credit Taken"]
 	fullCreds = ["Total Credits Taken"]
 	semRow = ["Semester No", 1]
-	maxSem += 1
 
 	for f in range(1, maxSem):
 		ms, spis = 0, 0
@@ -51,19 +51,21 @@ def prepOverallResult(rollNum: str):
 						ms += int(line[3])
 						finalGrade = fixWildcardEntry(line[4].strip()) 
 						spis += int(line[3]) * gradeMap[finalGrade]
-                # Handle the case for the sem which does not exist
-		if ms == 0:
-			semwiseCreds.append(0)
-			spi.append(0)
-		else:
-			spi.append((spis/ms).__round__(2))
-			semwiseCreds.append(ms)
+
+		# Handle the case for the sem which does not exist
+		mSpi = 0
+		mSemWiseCreds = 0
+		if ms > 0:
+			mSpi = (spis/ms).__round__(2)
+			mSemWiseCreds = ms
+		spi.append(mSpi)
+		semwiseCreds.append(mSemWiseCreds)
 
 	mCpi = spi[1] * semwiseCreds[1]
 	dynCreds = semwiseCreds[1]
 	fullCreds.append(dynCreds)
+	cpi.append(spi[1]) # Because CPI in 1st sem is same as SPI in 1st sem
 
-	cpi.append(spi[1])
 	for sem in range(2, maxSem):
 		semRow.append(sem)
 		dynCreds += semwiseCreds[sem]
@@ -76,6 +78,7 @@ def prepOverallResult(rollNum: str):
 masterList = []
 subNameMap = []
 studNameMap = []
+
 def prepLists():
 	for ind, line in enumerate(csv.reader(open(file_to_be_parsed))):
 		masterList.append(line)
@@ -95,7 +98,6 @@ def generate_marksheet():
 		# We'll fill these two missing elements(sub name & ltp)
 		# via other file
 		content = [1, line[2], "", "", line[3], line[5], line[4].strip()]
-		desiredFile = os.path.join(root_dir, line[0] + ".xlsx")
 
 		# Obtain subject name and LTP from the different file 
 		for indx, linex in enumerate(subNameMap):
@@ -104,6 +106,7 @@ def generate_marksheet():
 				content[3] = linex[2]
 
 		if ind > 0:
+			desiredFile = os.path.join(root_dir, line[0] + ".xlsx")
 			if not os.path.exists(desiredFile):
 				wb = openpyxl.Workbook()
 				wb.save(desiredFile)
@@ -112,7 +115,7 @@ def generate_marksheet():
 			existing_workbook = openpyxl.load_workbook(desiredFile) 
 
 			# prep result for a Roll Number, only ONCE
-			if not "Overall" in existing_workbook.sheetnames:
+			if "Overall" not in existing_workbook.sheetnames:
 				del existing_workbook["Sheet"]
 				desiredOverallSheet = "Overall"
 				existing_workbook.create_sheet(desiredOverallSheet)
@@ -128,7 +131,7 @@ def generate_marksheet():
 				sheet.append(cpi)
 				existing_workbook.save(desiredFile)
 
-			if not desiredSheet in existing_workbook.sheetnames:
+			if desiredSheet not in existing_workbook.sheetnames:
 				existing_workbook.create_sheet(desiredSheet)
 				existing_workbook[desiredSheet].append(header_row)
 				existing_workbook.save(desiredFile)
@@ -138,5 +141,6 @@ def generate_marksheet():
 			active_workbook[desiredSheet].append(content)
 			existing_workbook.save(desiredFile)
 	return
+
 prepLists()
 generate_marksheet()
