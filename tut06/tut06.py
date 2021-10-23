@@ -27,7 +27,7 @@ def generic_rename(seriesName, cleanerRegex, sznAndEpRegex, uniqueSeparator):
 
     if os.path.exists(seriesCorrectRoot):
         print(
-            f"[WARNING!] destination {seriesCorrectRoot} already exists, overwriting contents!"
+            f"[INFO] destination\n{seriesCorrectRoot}\nalready exists, overwriting contents!"
         )
         shutil.rmtree(seriesCorrectRoot)
     os.mkdir(seriesCorrectRoot)
@@ -44,14 +44,13 @@ def generic_rename(seriesName, cleanerRegex, sznAndEpRegex, uniqueSeparator):
             + " Episode "
             + str(sznAndEpList[1]).zfill(episode_padding)
             + (" -" if webseries_num != 1 else "")
-            + ((" " + mergedInfo[2]) if (len(mergedInfo) > 2) else "")
+            + ((" " + mergedInfo[2]) if (webseries_num != 1) else "")
             + rawInfo[1]
         )
-        # print(desiredFile)
         absIncorrectDest = os.path.join(seriesWrongRoot, filename)
         absCorrectDest = os.path.join(seriesCorrectRoot, desiredFileName)
         shutil.copy(absIncorrectDest, absCorrectDest)
-        # print(f"Copied \n{absIncorrectDest} to \n{absCorrectDest}")
+    print(f"Successfully renamed '{seriesName}'!!\nFind contents at:\n{seriesCorrectRoot}")
     return
 
 def regex_renamer():
@@ -76,7 +75,7 @@ def regex_renamer():
         elif webseries_num == 3:
             generic_rename("Lucifer", "\..*en", "\s\-\s", "x")
     else:
-        print("fy")
+        print("Invalid input detected! Please enter number in specified range")
 
 
 regex_renamer()
