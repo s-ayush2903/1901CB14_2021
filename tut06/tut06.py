@@ -47,8 +47,12 @@ def generic_rename(seriesName, cleanerRegex, sznAndEpRegex, uniqueSeparator):
             + ((" " + mergedInfo[2]) if (webseries_num != 1) else "")
             + rawInfo[1]
         )
+
+        # Remove more than "Single" spacing in the file name
+        # e.g. in Season 6 & Episode 8 of Lucifer(between 'Devil' & 'Save')
+        exactDesiredNameWithSingleSpacing = re.sub(" +", " ", desiredFileName)
         absIncorrectDest = os.path.join(seriesWrongRoot, filename)
-        absCorrectDest = os.path.join(seriesCorrectRoot, desiredFileName)
+        absCorrectDest = os.path.join(seriesCorrectRoot, exactDesiredNameWithSingleSpacing)
         shutil.copy(absIncorrectDest, absCorrectDest)
     print(f"Successfully renamed '{seriesName}'!!\nFind contents at:\n{seriesCorrectRoot}")
     return
