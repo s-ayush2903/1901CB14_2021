@@ -1,5 +1,4 @@
 import openpyxl
-from collections import defaultdict
 import os
 import shutil
 import csv
@@ -27,7 +26,10 @@ Map of subject code to number of feedback entries in backend for it by a rollNo,
 """
 idealSubFeedbackEntriesMap = {}
 
-"Map of rollNo to dicts of "
+"""
+ Map of rollNo to dicts of subCode whose feedback is filled, which further contains
+ info about the type of feedback filled for a given subject
+ """
 rollFeedbackMap = {}
 
 """
@@ -35,6 +37,10 @@ rollFeedbackMap = {}
  a map of subCode to the schedule sem
 """
 rollSubcodeSemMap = {}
+
+"""
+A map of rollNo to studInfo, which contains semInfo, emails, name and contact num
+"""
 studInfoMap = {}
 
 def prepStudInfoMap():
@@ -44,6 +50,11 @@ def prepStudInfoMap():
   return studInfoMap
 
 
+"""
+Returns the type of valid feedbacks applicable for a subject with known ltp
+e.g., @returns [1, 3] if first and last bit are non-zero
+                [1] if only the first bit is non-zero; and so on
+"""
 def validFeedbackOptionsfFromLtp(ltpStr: str) -> int:
   validEntries = []
   formattedList = ltpStr.split("-")
@@ -54,8 +65,9 @@ def validFeedbackOptionsfFromLtp(ltpStr: str) -> int:
 
 
 """
-@param contents: subNo, subName, ltp, creds
-corresp. indices:  0  ,   1    ,  2 ,   3   
+@param contents: subNo | subName | ltp | creds |
+------------------------------------------------
+corresp. indices:  0   |   1     |  2  |   3   |
 """
 def subFeedbackInfo():
   for index, contents in enumerate(csv.reader(open(subLtpFile))):
@@ -85,9 +97,9 @@ def prepRollSubcodeSemMap():
 
 
 """
-  Can this be simplified? Means can we reduce one more iteration
-  or
-  could this be done in one go?
+ Prepares the rollNo to feedback map, where @param [dict].value itself is a
+ dict of dicts which means a map of course code to the type of feedback filled,
+ and all of this chained together for a specific rollNo
 """
 def prepRollFeedbackMap():
   """
@@ -108,11 +120,8 @@ def prepRollFeedbackMap():
         if roll in rollSubcodeSemMap and feedbackType in idealSubFeedbackEntriesMap[subCode] and [rollSubcodeSemMap[roll][subCode], feedbackType] not in feedbacksListForSub:
           feedbacksListForSub.append([rollSubcodeSemMap[roll][subCode], feedbackType])
   return rollFeedbackMap
-          
-
 
 def feedback_not_submitted():
-    ltp_mapping_feedback_type = {1: "lecture", 2: "tutorial", 3: "practical"}
     output_file_name = os.path.join(pwd, "course_feedback_remaining.xlsx")
     if os.path.exists(output_file_name):
       os.remove(output_file_name)
@@ -121,52 +130,40 @@ def feedback_not_submitted():
     sheet = wb.active
     sheet.append(["rollno", "schedule_sem", "subno", "name", "email", "aemail", "contact"])
 
+    ctr = 1
     for roll in rollSubcodeSemMap:
+      if roll not in studInfoMap:
+        name = "NA_IN_STUDENT_INFO"
+        email = "NA_IN_STUDENT_INFO"
+        aemail = "NA_IN_STUDENT_INFO"
+        contact = "NA_IN_STUDENT_INFO"
+      else:
+        name = studInfoMap[roll][0]
+        email = studInfoMap[roll][1]
+        aemail = studInfoMap[roll][2]
+        contact = studInfoMap[roll][3]
       for subCode in rollSubcodeSemMap[roll]:
         if roll not in rollFeedbackMap:
-          if roll not in studInfoMap:
-            name = "NA_IN_STUDENT_INFO"
-            email = "NA_IN_STUDENT_INFO"
-            aemail = "NA_IN_STUDENT_INFO"
-            contact = "NA_IN_STUDENT_INFO"
-          else:
-            name = studInfoMap[roll][0]
-            email = studInfoMap[roll][1]
-            aemail = studInfoMap[roll][2]
-            contact = studInfoMap[roll][3]
           if subCode.strip() not in ["NSO", "NSS"] and len(idealSubFeedbackEntriesMap[subCode]) > 0:
             sheet.append([roll, rollSubcodeSemMap[roll][subCode], subCode, name, email, aemail, contact])
+          if name == "NA_IN_STUDENT_INFO":
+            ctr += 1
 
         elif subCode not in rollFeedbackMap[roll].keys():
-          name = "NA_IN_STUDENT_INFO"
-          email = "NA_IN_STUDENT_INFO"
-          aemail = "NA_IN_STUDENT_INFO"
-          contact = "NA_IN_STUDENT_INFO"
-          if roll in studInfoMap:
-            name = studInfoMap[roll][0]
-            email = studInfoMap[roll][1]
-            aemail = studInfoMap[roll][2]
-            contact = studInfoMap[roll][3]
           if subCode in idealSubFeedbackEntriesMap and len(idealSubFeedbackEntriesMap[subCode]) > 0:
             sheet.append([roll, rollSubcodeSemMap[roll][subCode], subCode, name, email, aemail, contact])
-            # sheet.append([roll, rollSubcodeSemMap[roll][subCode], subCode])
+          if name == "NA_IN_STUDENT_INFO":
+            ctr += 1
         else:
-          # name = "NA_IN_STUDENT_INFO"
-          # email = "NA_IN_STUDENT_INFO"
-          # aemail = "NA_IN_STUDENT_INFO"
-          # contact = "NA_IN_STUDENT_INFO"
-          if roll in studInfoMap:
-            name = studInfoMap[roll][0]
-            email = studInfoMap[roll][1]
-            aemail = studInfoMap[roll][2]
-            contact = studInfoMap[roll][3]
           lsss = sorted(rollFeedbackMap[roll][subCode])
           newList = []
           for sth in lsss:
             newList.append(sth[1])
           if newList != sorted(idealSubFeedbackEntriesMap[subCode]) and len(idealSubFeedbackEntriesMap[subCode]) > 0:
             sheet.append([roll, rollSubcodeSemMap[roll][subCode], subCode, name, email, aemail, contact])
-            # sheet.append([roll, subCode, rollSubcodeSemMap[roll][subCode]])
+          if name == "NA_IN_STUDENT_INFO":
+            ctr += 1
+    print(ctr)
     wb.save(output_file_name)
 
 
