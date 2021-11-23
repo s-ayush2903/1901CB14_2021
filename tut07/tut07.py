@@ -19,8 +19,8 @@ Maintain a map(dictionary) of RollNo to feedback of subs not filled
 pwd = os.getcwd()
 subLtpFile = os.path.join(pwd, "course_master_dont_open_in_excel.csv")
 studFeedbackFile = os.path.join(pwd, "course_feedback_submitted_by_students.csv")
-# studFeedbackFile = os.path.join(pwd, "temp.csv")
 courseRegnFile = os.path.join(pwd, "course_registered_by_all_students.csv")
+studInfoFile = os.path.join(pwd, "studentinfo.csv")
 
 """
 Map of subject code to number of feedback entries in backend for it by a rollNo, ideally
@@ -35,6 +35,13 @@ rollFeedbackMap = {}
  a map of subCode to the schedule sem
 """
 rollSubcodeSemMap = {}
+studInfoMap = {}
+
+def prepStudInfoMap():
+  for index, contents in enumerate(csv.reader(open(studInfoFile))):
+    if index > 0:
+      studInfoMap[contents[1]] = [contents[0], contents[8], contents[9], contents[10]]
+  return studInfoMap
 
 
 def validFeedbackOptionsfFromLtp(ltpStr: str) -> int:
@@ -98,12 +105,8 @@ def prepRollFeedbackMap():
         if subCode not in rollFeedbackMap[roll]:
           rollFeedbackMap[roll][subCode] = []
         feedbacksListForSub = rollFeedbackMap[roll][subCode]
-        # 1901ME31
-        # 'ME393': [['5', '1'], ['5', '3'], ['5', '1'], ['5', '3']]
-
         if roll in rollSubcodeSemMap and feedbackType in idealSubFeedbackEntriesMap[subCode] and [rollSubcodeSemMap[roll][subCode], feedbackType] not in feedbacksListForSub:
           feedbacksListForSub.append([rollSubcodeSemMap[roll][subCode], feedbackType])
-  # print(rollFeedbackMap)
   return rollFeedbackMap
           
 
@@ -116,34 +119,59 @@ def feedback_not_submitted():
 
     wb = openpyxl.Workbook()
     sheet = wb.active
+    sheet.append(["rollno", "schedule_sem", "subno", "name", "email", "aemail", "contact"])
 
-    # print(rollSubcodeSemMap)
     for roll in rollSubcodeSemMap:
       for subCode in rollSubcodeSemMap[roll]:
         if roll not in rollFeedbackMap:
-          sheet.append([roll, subCode, rollSubcodeSemMap[roll][subCode]])
+          if roll not in studInfoMap:
+            name = "NA_IN_STUDENT_INFO"
+            email = "NA_IN_STUDENT_INFO"
+            aemail = "NA_IN_STUDENT_INFO"
+            contact = "NA_IN_STUDENT_INFO"
+          else:
+            name = studInfoMap[roll][0]
+            email = studInfoMap[roll][1]
+            aemail = studInfoMap[roll][2]
+            contact = studInfoMap[roll][3]
+          if subCode.strip() not in ["NSO", "NSS"] and len(idealSubFeedbackEntriesMap[subCode]) > 0:
+            sheet.append([roll, rollSubcodeSemMap[roll][subCode], subCode, name, email, aemail, contact])
 
         elif subCode not in rollFeedbackMap[roll].keys():
-          sheet.append([roll, subCode, rollSubcodeSemMap[roll][subCode]])
-          # print(f"Lulz found niqqa: {subCode}, with roll {roll} & sem: {rollSubcodeSemMap[roll][subCode]}")
-          # print(f"found niqqa222: {subCode}, with roll {roll} & sem: {rollSubcodeSemMap[roll][subCode]}")
+          name = "NA_IN_STUDENT_INFO"
+          email = "NA_IN_STUDENT_INFO"
+          aemail = "NA_IN_STUDENT_INFO"
+          contact = "NA_IN_STUDENT_INFO"
+          if roll in studInfoMap:
+            name = studInfoMap[roll][0]
+            email = studInfoMap[roll][1]
+            aemail = studInfoMap[roll][2]
+            contact = studInfoMap[roll][3]
+          if subCode in idealSubFeedbackEntriesMap and len(idealSubFeedbackEntriesMap[subCode]) > 0:
+            sheet.append([roll, rollSubcodeSemMap[roll][subCode], subCode, name, email, aemail, contact])
+            # sheet.append([roll, rollSubcodeSemMap[roll][subCode], subCode])
         else:
+          # name = "NA_IN_STUDENT_INFO"
+          # email = "NA_IN_STUDENT_INFO"
+          # aemail = "NA_IN_STUDENT_INFO"
+          # contact = "NA_IN_STUDENT_INFO"
+          if roll in studInfoMap:
+            name = studInfoMap[roll][0]
+            email = studInfoMap[roll][1]
+            aemail = studInfoMap[roll][2]
+            contact = studInfoMap[roll][3]
           lsss = sorted(rollFeedbackMap[roll][subCode])
+          newList = []
           for sth in lsss:
-            if sth[1] not in sorted(idealSubFeedbackEntriesMap[subCode]):
-              sheet.append([roll, subCode, rollSubcodeSemMap[roll][subCode]])
-              # print(f"found niqqa333: {subCode}, with roll {roll} & sem: {rollSubcodeSemMap[roll][subCode]}")
-            rollSubcodeSemMap[roll]
+            newList.append(sth[1])
+          if newList != sorted(idealSubFeedbackEntriesMap[subCode]) and len(idealSubFeedbackEntriesMap[subCode]) > 0:
+            sheet.append([roll, rollSubcodeSemMap[roll][subCode], subCode, name, email, aemail, contact])
+            # sheet.append([roll, subCode, rollSubcodeSemMap[roll][subCode]])
     wb.save(output_file_name)
-      # break
 
 
-# print(validFeedbackOptionsfFromLtp("1-4-0"))
-# print(subFeedbackInfo())
-# print(prepRollSubcodeSemMap())
+prepStudInfoMap()
 prepRollSubcodeSemMap()
 subFeedbackInfo()
 prepRollFeedbackMap()
 feedback_not_submitted()
-# print(prepRollFeedbackMap())
-# feedback_not_submitted()
