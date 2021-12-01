@@ -105,6 +105,7 @@ def prepOverallResult(rollNum: str):
 
     return maxSem - 1, semwiseCreds, fullCreds, spi, cpi
 
+
 def prepPdfForRolls(rng: []):
     dims = {}
     for roll in rng:
@@ -114,22 +115,32 @@ def prepPdfForRolls(rng: []):
             pdf.add_page()
             pdf.set_font("Times", size=10)
             line_height = pdf.font_size * 1.5
-            pdf.rect(x=10, y=10, w=pdf.w - 20, h=pdf.h-20, style="")
+            pdf.rect(x=10, y=10, w=pdf.w - 20, h=pdf.h - 20, style="")
             pdf.rect(x=85, y=43, w=(pdf.w / 2) + 20, h=15, style="")
             fmtr = 0
-            pdf.image(os.path.join(os.getcwd(), "tsBanner.png"), x=10, y=10, w=pdf.w - 20)
+            pdf.image(
+                os.path.join(os.getcwd(), "tsBanner.png"), x=10, y=10, w=pdf.w - 20
+            )
             prg = ""
             temp = roll
-            if str(temp)[2] == '1':
+            if str(temp)[2] == "1":
                 prg = "Master of Technology"
-            if str(temp)[2] == '2':
+            if str(temp)[2] == "2":
                 prg = "PhD"
-            if str(temp)[2] == '0':
+            if str(temp)[2] == "0":
                 prg = "Bachelor of Technology"
             pdf.set_font(size=12, style="B")
-            pdf.text(x=87, y=48, txt=f"Roll No:  {roll}                                     Name: {studNameMap[roll]}       Year of Admission:  20{roll[0] + roll[1]}")
+            pdf.text(
+                x=87,
+                y=48,
+                txt=f"Roll No:  {roll}                                     Name: {studNameMap[roll]}       Year of Admission:  20{roll[0] + roll[1]}",
+            )
 
-            pdf.text(x=87, y=55, txt=f"Programme: {prg}       Course: {branchMap[str(temp[4] + temp[5])]}")
+            pdf.text(
+                x=87,
+                y=55,
+                txt=f"Programme: {prg}       Course: {branchMap[str(temp[4] + temp[5])]}",
+            )
             pdf.set_font(size=10, style="")
             abscissa = 7
             ordinate = 64
@@ -140,7 +151,9 @@ def prepPdfForRolls(rng: []):
 
             for sem in range(sems):
                 indx = 0
-                print(f"sem: {sem} | ord: {ordinate.__round__(2)} | x: {abscissa.__round__(2)}")
+                print(
+                    f"sem: {sem} | ord: {ordinate.__round__(2)} | x: {abscissa.__round__(2)}"
+                )
                 if (sem) % 4 == 0 and sem > 0:
                     pdf.set_x(recx)
                 for info in dfl[roll][sem + 1]:
@@ -150,7 +163,7 @@ def prepPdfForRolls(rng: []):
                     wdh = 0
                     ls = len(info) + 1
                     for ir in range(ls):
-                        if rind == 0: 
+                        if rind == 0:
                             wdh = 14
                         elif rind == 1:
                             wdh = 77
@@ -160,7 +173,15 @@ def prepPdfForRolls(rng: []):
                             wdh = 8
 
                         if ir < ls - 1:
-                            pdf.multi_cell(wdh, line_height, str(info[ir]), border=1, ln=3, max_line_height=pdf.font_size, align="C")
+                            pdf.multi_cell(
+                                wdh,
+                                line_height,
+                                str(info[ir]),
+                                border=1,
+                                ln=3,
+                                max_line_height=pdf.font_size,
+                                align="C",
+                            )
                             ix, iy = pdf.get_x(), pdf.get_y()
                         rind += 1
                     if indx == (len(dfl[roll][sem + 1]) - 1):
@@ -175,7 +196,11 @@ def prepPdfForRolls(rng: []):
                             recx = abscissa
                         cx, cy = pdf.get_x() - 110, pdf.get_y() + 8
                         pdf.set_font(style="B", size=10)
-                        pdf.text(x=cx - 6, y= cy + 2, txt=f"Total Credits: {str(swcreds[sem + 1])}  Credits cleared: {str(swcreds[sem + 1])}    SPI: {str(spiz[sem + 1])}   CPI: {str(cpiz[sem + 1])}")
+                        pdf.text(
+                            x=cx - 6,
+                            y=cy + 2,
+                            txt=f"Total Credits: {str(swcreds[sem + 1])}  Credits cleared: {str(swcreds[sem + 1])}    SPI: {str(spiz[sem + 1])}   CPI: {str(cpiz[sem + 1])}",
+                        )
                         pdf.rect(x=cx - 8, y=cy - 2, w=95, h=7, style="")
                         pdf.set_font(style="", size=10)
                         # print(f"{ordinate.__round__(2)} | sem: {sem}")
@@ -185,7 +210,12 @@ def prepPdfForRolls(rng: []):
                     indx += 1
                     pdf.ln(line_height)
             # print(dims)
-            pdf.line(x1=10, y1=dims[len(dims)-1][1] + 30, x2= pdf.w - 10, y2=dims[len(dims) - 1][1] + 28)
+            pdf.line(
+                x1=10,
+                y1=dims[len(dims) - 1][1] + 30,
+                x2=pdf.w - 10,
+                y2=dims[len(dims) - 1][1] + 28,
+            )
 
             # print(dims["last"])
             xco = dims[len(dims) - 1][0] + 80
@@ -194,7 +224,11 @@ def prepPdfForRolls(rng: []):
             pdf.set_font(size=12, style="B")
             pdf.text(xco - 38, yco, txt="Assitant Registrar")
             # pdf.text(20, yco, txt=f"Date Generated: {datetime().today()}")
-            pdf.text(20, yco, txt=f"Date Generated: {datetime.today().strftime('%d-%m-%Y | %H:%M:%S')}")
+            pdf.text(
+                20,
+                yco,
+                txt=f"Date Generated: {datetime.today().strftime('%d-%m-%Y | %H:%M:%S')}",
+            )
             pdf.output(f"{roll}Result.pdf")
         else:
             continue
