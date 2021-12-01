@@ -16,6 +16,16 @@ studNameMap = {}
 dfl = {}
 dct = {}
 
+branchMap = {
+    "CS": "Computer Science and Engineering",
+    "CB": "Chemical Engineering",
+    "EE": "Electrical & Electronics Engineering",
+    "ME": "Mechanical Engineering",
+    "MM": "Metallurgical Engineering",
+    "CE": "Civil Engineering",
+    "CH": "Chemistry",
+}
+
 gradeMap = {
     "AA": 10,
     "AB": 9,
@@ -119,7 +129,7 @@ def prepPdfForRolls(rng: []):
             pdf.set_font(size=12, style="B")
             pdf.text(x=87, y=48, txt=f"Roll No:  {roll}                                     Name: {studNameMap[roll]}       Year of Admission:  20{roll[0] + roll[1]}")
 
-            pdf.text(x=87, y=55, txt=f"Programme: {prg}       Course: cse")
+            pdf.text(x=87, y=55, txt=f"Programme: {prg}       Course: {branchMap[str(temp[4] + temp[5])]}")
             pdf.set_font(size=10, style="")
             abscissa = 7
             ordinate = 64
