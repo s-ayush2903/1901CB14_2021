@@ -1,0 +1,80 @@
+<html>
+	<head>
+		<style>
+		.center 
+		{
+			margin: 0;
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			-ms-transform: translate(-50%, -50%);
+			transform: translate(-50%, -50%);
+		}
+		.row 
+		{
+			display: flex;
+		}
+			/* Create two equal columns that sits next to each other */
+		.column 
+		{
+			flex: 50%;
+			padding: 10px;
+		}
+		</style>
+		<script type="text/javascript">
+    function EnableDisable(id) {
+        //Reference the Button.
+        var btnSubmit = document.getElementById("btnSubmit");
+ 
+        //Verify the TextBox value.
+        if (id.value.trim() != "") {
+            //Enable the TextBox when TextBox has value.
+            btnSubmit.disabled = false;
+        } else {
+            //Disable the TextBox when TextBox is empty.
+            btnSubmit.disabled = true;
+        }
+    };
+</script>
+		<title>GUI Based Transcript Generator</title>
+	</head>
+	<body>
+	<div class="center">
+        &emsp;<img style="text-align:center;" src={{url_for('static',filename = '/instiLogo.jpeg')}} alt="Institue Logo"><br><br><br><br><br>
+		<form name ="theform" action = "http://localhost:5000/" method = "POST" enctype = "multipart/form-data">
+		<div class="row" style="text-align:center;">
+			<div class="column" style="text-align:center;">
+			<big><b>Upload Files</b></big>(Grades.CSV, Name-Roll.CSV & Subject_Master.CSV)<p>
+			<input type = "file" name = "files[]" multiple="true"/>
+			</div>
+			<div class="column" style="text-align:center;">
+			<big><b>Upload Signature</b></big> <p>
+			<input type = "file" name = "sign"/><br><br>
+			</div>
+			<div class="column" style="text-align:center;">
+			<big><b>Upload Seal</b></big> <br><p>
+			<input type = "file" name = "seal"/>
+			</div>
+		</div>
+		<br>
+		<div style="text-align:center;">
+		<big><b>Range</b></big>(Eg: "0401CS01-0401CS10")&emsp;&emsp;<input type = "text" name = "First" onkeyup="EnableDisable(this)" id="First"/>
+		<p style="text-align:center;"><button type="submit" id="btnSubmit" name = "range" disabled="disabled">Generate In-Range Transcript</button><br>
+		<p style="text-align:center;"><button type="submit" id="transcript" name = "transcript">Generate All Transcript</button><br>
+		<p style="text-align:center;"><a href="{{ url_for('.push_file') }}">Download Transcripts Zip</a><br>
+		</div>
+		<p>
+		{% with messages = get_flashed_messages() %}
+			{% if messages %}
+				<ul class=flashes>
+				{% for message in messages %}
+					<li>{{ message }}</li>
+				{% endfor %}
+				</ul>
+			{% endif %}
+		{% endwith %}
+		</p>
+		</form>
+	</div>  
+	</body>
+</html>
