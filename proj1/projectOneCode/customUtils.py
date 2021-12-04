@@ -17,17 +17,23 @@ baseDir = os.path.join(pwd, "assets")
 uploadDir = os.path.join(pwd, "uploads")
 fle = os.path.join(uploadDir, "responses.csv")
 master = os.path.join(uploadDir, "master_roll.csv")
-rootDir = os.path.join(pwd, "ans")
-ansDir = os.path.join(rootDir, "result")
+ansDir = os.path.join(pwd, "marksheets")
 
 absentNameRollMap, concMs, styless = {}, {}, {}
 canSendEmails = False
 rollWiseDone = False
 global cachedNm, cachedPm, rollEmailMap
 rollEmailMap = {}
+nameRollMap = {}
+respInfoMapRoll = {}
 ansList = {}    
 cmsList = {}
 summr = {}
+
+def prepNameRollMap():
+    for index, conts in enumerate(csv.reader(open(master))):
+        nameRollMap[conts[0]] = conts[1]
+    return nameRollMap
 
 def getStyle(style):
     bd = Side(style="thin")
@@ -57,12 +63,13 @@ def getStyle(style):
         if style != "ltitle" and style != "rtitle":
             baseStyle.border = Border(bd, bd, bd, bd)
         styless[style] = baseStyle
-    # print(f"styless: {styless}")
     return styless[style]
 
 
 def prepareQuizResult(rollNo, line=[], absent=False):
     global cors, left, wrong
+    cmsList[rollNo] = ""
+    ansList[rollNo] = ""
     cors, left, wrong = 0, 0, 0
     wb = openpyxl.Workbook()
     sheet = wb.active
@@ -98,12 +105,6 @@ def prepareQuizResult(rollNo, line=[], absent=False):
 
     colL, colR = "A", "B"
     onceCompleted = False
-
-    for ind in range(6):
-        if rollNo not in cmsList:
-            cmsList[rollNo] = ""
-        entry = line[ind] if not absent else "Absent"
-        cmsList[rollNo] += f"{entry},"
 
     lst = line[7:] if not absent else ans
     for ind, val in enumerate(lst):
@@ -164,7 +165,7 @@ def prepareQuizResult(rollNo, line=[], absent=False):
                 if inr == 10:
                     sheet[col + str(inr)] = wrong
                 elif inr == 11:
-                    sheet[col + str(inr)] = -1 * incorPoints
+                    sheet[col + str(inr)] = incorPoints
                 elif inr == 12:
                     sheet[col + str(inr)] = (sheet["C10"].value) * (sheet["C11"].value)
                 sheet[col + str(inr)].style = getStyle("incorrect")
@@ -174,25 +175,31 @@ def prepareQuizResult(rollNo, line=[], absent=False):
     sheet["E10"].style = getStyle("normal")
     sheet["D11"] = 0
     sheet["D10"].style = getStyle("normal")
-    marks = (cors) * (corPoints) - (wrong) * (incorPoints)
-    tmarks = (cors + left + wrong) * (corPoints)
-    mstr = str(marks) + "/" + str(tmarks)
-    sheet["E12"] = mstr if not absent else "Absent"
+    corrmarks = (cors * corPoints).__round__(2)
+    marks = ((cors * corPoints) + (wrong * incorPoints)).__round__(2)
+    tmarks = ((cors + left + wrong) * (corPoints)).__round__(2)
+    mstr = str(corrmarks) + " / " + str(tmarks)
+    nstr = str(marks) + " / " + str(tmarks)
+    sheet["E12"] = nstr if not absent else "Absent"
     sheet["E12"].style = getStyle("absolute")
-    concMs[rollNo] = str(
-        str(cors * corPoints)
-        + ","
-        + str(wrong * incorPoints)
-        + ","
-        + sheet["E12"].value
-    )
+    concMs[rollNo] = str(str(cors * corPoints)+ "," + str(wrong * incorPoints) + "," + sheet["E12"].value)
+
+    for ind in range(6):
+        if rollNo not in cmsList:
+            cmsList[rollNo] = ""
+        if ind == 2:
+            cmsList[rollNo] += f"{str(mstr)}," if not absent else ","
+        else:
+            cmsList[rollNo] += f"{line[ind]}," if not absent else ","
     
-    cmsList[rollNo] += f"{marks}"
+    cmsList[rollNo] += f"{nstr}"
     if rollNo not in summr:
         summr[rollNo] = []
     summr[rollNo] = [cors, wrong, left]
+
     sheet.title = "quiz"
     wb.save(fileName)
+    return str(cors * corPoints) if not absent else ""
 
 
 def prepareResultForPresentStudents() -> bool:
@@ -206,10 +213,9 @@ def prepareResultForPresentStudents() -> bool:
                 for _ in line[7:]:
                     ans.append(_.strip())
             else:
-                print("fy")
                 return False
         fileName = os.path.join(ansDir, line[6] + ".xlsx")
-        if index > 1:
+        if index > 0:
             prepareQuizResult(line[6], line)
     return True
 
@@ -219,28 +225,28 @@ def processLeft():
     for index, conts in enumerate(csv.reader(open(master))):
         if index > 1:
             if f"{conts[0].upper()}.xlsx" not in files:
-                print(f"noo, not found: {conts[0].upper()}")
+                # print(f"noo, not found: {conts[0].upper()}")
                 absentNameRollMap[conts[0]] = conts[1]
                 prepareQuizResult(conts[0], absent=True)
 
 
 def prepareConciseMarksheet():
-    concMsFile = os.path.join(rootDir, "concise_marksheet.csv")
+    concMsFile = os.path.join(ansDir, "concise_marksheet.csv")
     lst = ""
     for ind in range(cors + left + wrong):
         lst += f"Unnamed {ind + 7},"
     if os.path.exists(concMsFile):
         os.remove(concMsFile)
     with open(concMsFile, "w") as cmfObj:
-        cmfObj.write(f"Timestamp,email,gScore,name,webmail,cont,negScore,roll,{str(lst)}statusAns")
+        cmfObj.write(f"Timestamp,Email Address,Google_Score,Name,IITP webmail,Phone(10 digit only),Score_After_Negative,Roll Number,{str(lst)}statusAns")
         for roll in concMs:
             cmfObj.write("\n")
-            cmfObj.write(str(cmsList[roll] + "," + roll + "," + ansList[roll] + str(summr[roll])))
+            cmfObj.write(str(cmsList[roll] + "," + roll + "," + ansList[roll] + '"' + str(summr[roll]) + '"')) 
     return concMs
 
 
 def archiveRes():
-    shutil.make_archive("result", "zip", rootDir)
+    shutil.make_archive("Marksheets", "zip", pwd)
     return True
 
 
@@ -251,19 +257,17 @@ def mainFn(cpts, incPts):
     response = prepareResultForPresentStudents()
     if response:
         rollWiseDone = True
-        # processLeft()
-        # prepareConciseMarksheet()
-        # archiveRes()
-        # print(os.listdir(ansDir))
     else:
-        return false
-        print("fy and grow up")
+        return False
 
 def callConcise(cpts, incPts):
-    if not rollWiseDone:
-        mainFn(cpts, incPts)
+    #if not rollWiseDone:
+        #mainFn(cpts, incPts)
     processLeft()
     prepareConciseMarksheet()
-    archiveRes()
+    # archiveRes()
     return True
 
+#if __name__ =="__main__":
+    #mainFn(4.2, 2)
+    #callConcise(4.2, 2)
